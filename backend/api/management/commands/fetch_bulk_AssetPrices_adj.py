@@ -6,12 +6,12 @@ from tqdm import tqdm
 import time
 
 class Command(BaseCommand):
-    help = "Bulk load historical prices for multiple tickers into AssetPrices"
+    help = "Bulk load historical prices (adjusted for splits and dividends) for multiple tickers into AssetPrices"
 
     def add_arguments(self, parser):
         parser.add_argument('--tickers_file', type=str, help="Path to text file with tickers")
         parser.add_argument('--period', type=str, default='5y', help="Yahoo Finance period, e.g., 1y, 5y, max")
-        parser.add_argument('--batch_size', type=int, default=50, help="Number of tickers per download batch")
+        parser.add_argument('--batch_size', type=int, default=100, help="Number of tickers per download batch")
 
     def handle(self, *args, **options):
         file_path = options['tickers_file']
@@ -22,15 +22,15 @@ class Command(BaseCommand):
             for i in range(0, len(lst), n):
                 yield lst[i:i + n]
 
-        # Load ticker list
-        with open(file_path, 'r') as f:
-            tickers = [line.strip().upper() for line in f if line.strip()]
-        tickers = list(set(tickers))
+        # Load ticker list from csv
+        a = pd.read_csv(file_path)
+        tickers = a.iloc[:,0].to_list()
+        tickers = [item for item in tickers if '/' not in str(item) and '.' not in str(item) and "^" not in str(item)]
+        
         self.stdout.write(f"Loaded {len(tickers)} unique tickers")
 
         failed = []
-
-        for batch in tqdm(chunks(tickers, batch_size), total=len(tickers)//batch_size + 1, desc="Downloading batches"):
+        for batch in tqdm(chunks(tickers, batch_size), total=len(tickers)//batch_size, desc="Downloading batches", initial=1):
             try:
                 data = yf.download(
                     tickers=batch,
@@ -41,7 +41,7 @@ class Command(BaseCommand):
                     progress=False
                 )
 
-                for ticker in batch:
+                for ticker in tqdm(batch, desc="Processing tickers", leave=False):
                     try:
                         df = data[ticker] if len(batch) > 1 else data
                         if "Close" not in df.columns:
@@ -56,7 +56,7 @@ class Command(BaseCommand):
                         failed.append(ticker)
                         self.stderr.write(self.style.ERROR(f"[{ticker}] failed: {e}"))
 
-                time.sleep(1.5)  # Respectful pause to avoid Yahoo rate limits
+                time.sleep(1)  # Respectful pause to avoid Yahoo rate limits
 
             except Exception as e:
                 failed.extend(batch)
