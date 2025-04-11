@@ -6,4 +6,4 @@ from .models import AssetPrices
 @admin.register(AssetPrices)
 class AssetPricesAdmin(admin.ModelAdmin):
     list_display = ("ticker", "date", "close")
-    list_filter = ("ticker")
+    list_filter = ("ticker",)
