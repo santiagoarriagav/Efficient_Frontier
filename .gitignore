@@ -1,0 +1,51 @@
+# === Python / Django ===
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.log
+*.pot
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.env
+*.env.*
+*.coverage
+htmlcov/
+.coverage.*
+.cache/
+.vscode/
+
+# Virtual environments
+venv/
+env/
+ENV/
+*.egg-info/
+pip-wheel-metadata/
+
+# Django static/media files
+staticfiles/
+media/
+
+# === React / Node ===
+frontend/node_modules/
+frontend/.env
+frontend/build/
+frontend/dist/
+frontend/.parcel-cache/
+frontend/.next/
+frontend/.turbo/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.eslintcache
+
+# === OS / Editor junk ===
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.bak
+*.tmp
+.idea/
+*.code-workspace
