@@ -9,7 +9,7 @@ class Portfolio:
         #definiciones
         self.assets     = assets
         self.period     = period
-        self.rang      = rang
+        self.rang       = rang
         self.riskfree   = RiskFreeYearly
 
         self.prices = self.get_prices()
@@ -24,7 +24,7 @@ class Portfolio:
             ).values("ticker", "date", "close")
 
         df = pd.DataFrame.from_records(qs)
-        df_pivot = df.pivot(index="date", columns="ticker", values="close")
+        df_pivot = df.pivot(index="date", columns="ticker", values="close").sort_index().dropna()
         return df_pivot
 
     def years_to_days(self, period_str):
@@ -35,15 +35,16 @@ class Portfolio:
         else:
             raise ValueError("Unsupported period format")
         
-    def classic_returns(self):
-        """this would only take direct returns in the range with no adjustment, 
-        and create a dataframe"""
+    def classic_returns_annualized(self):
+        """Take classic returns, and annualized"""
 
         prices = self.prices
         forward_prices = prices.shift(-self.rang) 
         returns = (forward_prices / prices) - 1
         returns = returns[:-self.rang] #remove nans and 0
-        return returns
+        annualized_returns = (1 + returns)**(252/self.rang) - 1
+        
+        return annualized_returns
         
     def smooth_classic_returns(self):
         
