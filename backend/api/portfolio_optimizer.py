@@ -3,9 +3,10 @@ import numpy as np
 from api.models import AssetPrices
 from datetime import timedelta
 from django.utils.timezone import now
+from scipy.optimize import minimize
 
 class Portfolio:
-    def __init__(self, assets, period="5y", rang=30, RiskFreeYearly=0.04):
+    def __init__(self, assets, period="5y", rang=30, RiskFreeYearly=0.04, return_type="classic"):
         #definiciones
         self.assets     = assets
         self.period     = period
@@ -13,6 +14,20 @@ class Portfolio:
         self.riskfree   = RiskFreeYearly
 
         self.prices = self.get_prices()
+    
+        match return_type:
+            case "classic":
+                self.returns = self.classic_returns_annualized()
+            case "smooth":
+                self.returns = self.smooth_classic_returns()
+        
+        #make the data from returns
+        self.cov_matrix = self.returns.cov()
+        self.mean_returns = self.returns.mean()
+        print(self.mean_returns)
+
+        self.efficient_weights = self.efficient_frontier_weights()
+
 
     def get_prices(self):
         days_back = self.years_to_days(self.period)
@@ -49,3 +64,77 @@ class Portfolio:
     def smooth_classic_returns(self):
         
         return
+    
+    def full_portfolio_performance(self, weights):
+        weights = np.matrix(weights)
+        rf = self.riskfree
+        mean_returns = self.mean_returns
+        cov_matrix = self.cov_matrix
+
+        PortReturn = np.dot(weights, mean_returns)
+        variance = np.dot(np.dot(weights.T, cov_matrix),weights)
+        PortStDev = np.sqrt(variance)
+        
+        sharpe = (PortReturn - rf) / PortStDev
+
+        return {"PortReturn": PortReturn, "PortStDev": PortStDev, "PortSharpe": sharpe}
+    
+    def PortReturn(self, weights):
+        mean_returns = self.mean_returns
+        PortReturn = np.dot(weights, mean_returns)
+        return PortReturn
+    
+    def PortStDev(self, weights):
+        weights = np.matrix(weights)
+        cov_matrix = self.cov_matrix
+        variance = np.dot(np.dot(weights.T, cov_matrix),weights)
+        PortStDev = np.sqrt(variance)
+        return PortStDev
+    
+    def PortSharpe(self, weights):
+        weights = np.matrix(weights)
+        rf = self.riskfree
+        mean_returns = self.mean_returns
+        cov_matrix = self.cov_matrix
+
+        PortReturn = np.dot(weights, mean_returns)
+        variance = np.dot(np.dot(weights.T, cov_matrix),weights)
+        PortStDev = np.sqrt(variance)
+        
+        sharpe = (PortReturn - rf) / PortStDev
+        return sharpe
+    
+    def efficient_frontier_weights(self, trials=10):
+        mean_returns = self.mean_returns
+        num_assets = len(mean_returns)
+
+        #weights = np.matrix()
+        cov_matrix = self.cov_matrix
+        
+        initial = num_assets * [1. / num_assets]
+
+        target_returns = np.linspace(min(self.mean_returns), 
+                                     max(self.mean_returns), trials)
+        efficient_weights = []
+        
+        for target in target_returns:
+            constraints = (
+                    {'type': 'eq', 'fun': lambda w: np.sum(w) - 1},
+                    {'type': 'eq', 'fun': lambda w: np.dot(w, mean_returns) - target}
+                )
+
+            result = minimize(
+                lambda w: np.dot(np.dot(w.T, cov_matrix),w),
+                initial,
+                method='SLSQP',
+                constraints=constraints,
+                )
+            
+            if result.success:
+                efficient_weights.append(result.x)
+            else:
+                print(f"Optimization failed for target return: {target}")
+
+        return efficient_weights
+
+
