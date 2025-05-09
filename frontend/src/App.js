@@ -1,7 +1,6 @@
-import logo from './logo.svg';
 import './App.css';
 
-import EfficientFrontier from './components/EfficientFrontier';
+// import EfficientFrontier from './components/EfficientFrontier';
 import EfficientFrontierChart from './components/EfficientFrontierChart';
 
 function App() {
@@ -10,7 +9,20 @@ function App() {
   return (
     <div className="App">
       <h1>Efficient Frontier</h1>
+      <div>
+        <GridItem title={"aaaa"}></GridItem>
+        <GridItem title={"aaaa"}></GridItem>
       <EfficientFrontierChart tickers={tickers}></EfficientFrontierChart>
+      </div>
+    </div>
+  );
+}
+
+function GridItem({ title, children }) {
+  return (
+    <div className="App">
+      <h3>{title}</h3>
+      {children}
     </div>
   );
 }

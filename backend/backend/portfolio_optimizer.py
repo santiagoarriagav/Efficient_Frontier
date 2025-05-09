@@ -144,7 +144,7 @@ class Portfolio:
         
         summaries = []
 
-        counter = 0
+        counter = 1
         for weights in self.efficient_weights:
             performance = self.full_portfolio_performance(weights)
             summary = {
