@@ -9,8 +9,11 @@ from backend.portfolio_optimizer import Portfolio
 class EfficientFrontierView(APIView):
     def post(self, request):
         tickers = request.data.get("tickers", [])
+        if len(tickers) < 2:
+            return Response({"error": "At least two tickers are required."}, status=400)
 
-        portfolio = Portfolio(tickers)
+        portfolio = Portfolio(tickers, rang=365)
 
-        optimal_weights = portfolio.efficient_frontier_weights() 
-        return Response({"weights": optimal_weights}, status=status.HTTP_200_OK)
+        summaries = portfolio.get_graph_data() 
+
+        return Response({"frontier": summaries}, status=status.HTTP_200_OK)

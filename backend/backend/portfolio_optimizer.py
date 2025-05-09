@@ -6,7 +6,7 @@ from django.utils.timezone import now
 from scipy.optimize import minimize
 
 class Portfolio:
-    def __init__(self, assets, period="5y", rang=30, RiskFreeYearly=0.04, return_type="classic"):
+    def __init__(self, assets, period="5y", rang=365, RiskFreeYearly=0.04, return_type="classic"):
         #definiciones
         self.assets     = assets
         self.period     = period
@@ -26,10 +26,9 @@ class Portfolio:
         self.mean_returns = self.returns.mean()
         print(self.mean_returns)
 
-        self.efficient_weights = self.efficient_frontier_weights()
+        #calling the functions
+        self.efficient_frontier_weights()
         
-
-
     def get_prices(self):
         days_back = self.years_to_days(self.period)
         cutoff_date = now().date() - timedelta(days=days_back)
@@ -73,7 +72,7 @@ class Portfolio:
         cov_matrix = self.cov_matrix
 
         PortReturn = np.dot(weights, mean_returns)
-        variance = np.dot(np.dot(weights.T, cov_matrix),weights)
+        variance = np.dot(np.dot(weights, cov_matrix),weights.T)
         PortStDev = np.sqrt(variance)
         
         sharpe = (PortReturn - rf) / PortStDev
@@ -105,9 +104,10 @@ class Portfolio:
         sharpe = (PortReturn - rf) / PortStDev
         return sharpe
     
-    def efficient_frontier_weights(self, trials=10):
+    def efficient_frontier_weights(self, trials=20):
         mean_returns = self.mean_returns.values.flatten()
         num_assets = len(mean_returns)
+        bounds = tuple((0, 1) for _ in range(num_assets))
 
         #weights = np.matrix()
         cov_matrix = self.cov_matrix
@@ -116,8 +116,8 @@ class Portfolio:
 
         target_returns = np.linspace(min(self.mean_returns), 
                                      max(self.mean_returns), trials)
-        efficient_weights = []
-        
+        efficient_weights   = []
+
         for target in target_returns:
             constraints = (
                     {'type': 'eq', 'fun': lambda w: np.sum(w) - 1},
@@ -129,13 +129,34 @@ class Portfolio:
                 initial,
                 method='SLSQP',
                 constraints=constraints,
+                bounds=bounds
                 )
             
             if result.success:
                 efficient_weights.append(np.round(result.x,6))
             else:
                 print(f"Optimization failed for target return: {target}")
+        
+        self.efficient_weights  = efficient_weights
+        return None
+    
+    def get_graph_data(self):
+        
+        summaries = []
 
-        return efficient_weights
+        counter = 0
+        for weights in self.efficient_weights:
+            performance = self.full_portfolio_performance(weights)
+            summary = {
+                "name": f"Portfolio {counter}",
+                "weights": dict(zip(self.assets, weights)),
+                "return": float(performance["PortReturn"]),
+                "stdev": float(performance["PortStDev"]),
+                "sharpe": float(performance["PortSharpe"]),
+            }
+            summaries.append(summary)
+            counter += 1
+
+        return summaries
 
 
