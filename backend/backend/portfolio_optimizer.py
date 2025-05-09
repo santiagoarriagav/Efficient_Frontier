@@ -27,6 +27,7 @@ class Portfolio:
         print(self.mean_returns)
 
         self.efficient_weights = self.efficient_frontier_weights()
+        
 
 
     def get_prices(self):
@@ -105,7 +106,7 @@ class Portfolio:
         return sharpe
     
     def efficient_frontier_weights(self, trials=10):
-        mean_returns = self.mean_returns
+        mean_returns = self.mean_returns.values.flatten()
         num_assets = len(mean_returns)
 
         #weights = np.matrix()
@@ -131,7 +132,7 @@ class Portfolio:
                 )
             
             if result.success:
-                efficient_weights.append(result.x)
+                efficient_weights.append(np.round(result.x,6))
             else:
                 print(f"Optimization failed for target return: {target}")
 
