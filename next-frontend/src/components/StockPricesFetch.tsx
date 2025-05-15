@@ -1,111 +1,107 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import axios from "axios";
 import {
-  ScatterChart,
-  Scatter,
-  XAxis,
-  YAxis,
-  CartesianGrid,
+  Chart as ChartJS,
+  LineElement,
+  PointElement,
+  LinearScale,
+  TimeScale,
   Tooltip,
-  ResponsiveContainer,
-  TooltipProps
-} from "recharts";
-import { StockPriceChartPoint, StockPriceChartPointResponse, StockPriceChartPointProps } from "@/types/stock_prices_chart";
+  Legend,
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
+import 'chartjs-adapter-date-fns'; // Enables time scale support using date-fns
 
-// Custom tooltip typed with TooltipProps
-const CustomTooltip = ({
-  active,
-  payload,
-}: TooltipProps<any, string>) => {
-  if (active && payload && payload.length > 0) {
-    const { return: expectedReturn, risk, sharpe } = payload[0].payload;
-    return (
-      <div className="custom-tooltip">
-        <p><strong>Return:</strong> {(expectedReturn * 100).toFixed(2)}%</p>
-        <p><strong>Risk:</strong> {(risk * 100).toFixed(2)}%</p>
-        <p><strong>Sharpe Ratio:</strong> {sharpe.toFixed(2)}</p>
-      </div>
-    );
-  }
-  return null;
+// Register Chart.js components
+ChartJS.register(
+  LinearScale,
+  LineElement,
+  PointElement,
+  TimeScale,
+  Tooltip,
+  Legend
+);
+
+// Define the expected shape of the data
+type PricePoint = {
+  date: string;
+  price: number;
 };
 
-export default function EfficientFrontierChart({ tickers }: StockPriceChartPointProps) {
-  const [frontierData, setFrontierData] = useState<StockPriceChartPoint []>([]);
-  const [selected, setSelected] = useState<StockPriceChartPoint | null>(null);
-  const chartRef = useRef<HTMLDivElement | null>(null);
+type Props = {
+  data: Record<string, PricePoint[]>; // e.g. { AAPL: [...], MSFT: [...] }
+};
 
-  useEffect(() => {
-    axios.post("http://localhost:8000/api/stock-price-history/", { tickers })
-      .then(res => setFrontierData(res.data.frontier))
-      .catch(err => console.error("API error:", err));
-  }, [tickers]);
+// Helper to assign a color per ticker
+function getColorForTicker(ticker: string): string {
+  const predefined: Record<string, string> = {
+    AAPL: '#1f77b4',
+    MSFT: '#ff7f0e',
+    GOOGL: '#2ca02c',
+    AMZN: '#d62728',
+    META: '#9467bd',
+    TSLA: '#8c564b',
+  };
 
-  const chartData = frontierData.map((p, idx) => ({
-    id: idx + 1,
-    ticker: p.ticker,
-    date: p.date,
-    values: p.value
-  }));
+  // If not predefined, generate one using HSL
+  if (!predefined[ticker]) {
+    predefined[ticker] = `hsl(${Math.floor(Math.random() * 360)}, 70%, 50%)`;
+  }
 
-  // Detect clicks outside the chart area to clear selection
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (chartRef.current && !chartRef.current.contains(e.target as Node)) {
-        setSelected(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  return predefined[ticker];
+}
+
+export default function StockPriceChart({ data }: Props) {
+  const chartData = {
+    datasets: Object.entries(data).map(([ticker, points]) => {
+      const color = getColorForTicker(ticker);
+      return {
+        label: ticker,
+        data: points.map(p => ({ x: p.date, y: p.price })),
+        borderColor: color,
+        backgroundColor: color,
+        pointBackgroundColor: color,
+        pointBorderColor: color,
+        borderWidth: 2,
+        fill: false,
+      };
+    }),
+  };
 
   return (
-    <>
-      <div ref={chartRef}>
-        <ResponsiveContainer width="100%" height={400}>
-          <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-            <CartesianGrid />
-            <XAxis
-              type="number"
-              dataKey="risk"
-              name="Standard Deviation"
-              tickFormatter={(v) => (v * 100).toFixed(1) + '%'}
-            />
-            <YAxis
-              type="number"
-              dataKey="return"
-              name="Expected Return"
-              tickFormatter={(v) => (v * 100).toFixed(1) + '%'}
-            />
-            <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: "3 3" }} />
-            <Scatter
-              name="Portfolios"
-              data={chartData}
-              fill="#8884d8"
-              onClick={(e) => {
-                if (e && e.payload) {
-                  setSelected(e.payload as PortfolioPoint);
-                }
-              }}
-            />
-          </ScatterChart>
-        </ResponsiveContainer>
-      </div>
-
-      {selected && selected.weights && (
-        <div className="mt-4 bg-gray-100 border border-gray-300 rounded p-4 w-[300px]">
-          <h4 className="font-semibold mb-2">Portfolio {selected.id}</h4>
-          <ul className="list-disc ml-4 text-sm">
-            {Object.entries(selected.weights).map(([ticker, weight]) => (
-              <li key={ticker}>
-                {ticker}: {(weight * 100).toFixed(2)}%
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </>
+    <Line
+      data={chartData}
+      options={{
+        responsive: true,
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: { mode: 'nearest', intersect: false },
+        },
+        scales: {
+          x: {
+            type: 'time',
+            time: {
+              unit: 'day',
+              tooltipFormat: 'PPP',
+            },
+            title: {
+              display: true,
+              text: 'Date',
+            },
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'Price (USD)',
+            },
+            ticks: {
+              callback: function (value) {
+                return `$${value}`;
+              },
+            },
+          },
+        },
+      }}
+    />
   );
 }
