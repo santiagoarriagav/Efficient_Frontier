@@ -1,30 +1,34 @@
-
 import Link from 'next/link';
 import Head from 'next/head';
-
 
 export default function HomePage() {
   return (
     <>
-    <Head>
-      <title>HomePage</title>
-      <meta name="description" content="This is my awesome Next.js app" />
-      <meta name="viewport" content="width=device-width, initial-scale=1" />
-    </Head>
-    
-    <main >
-      <div className="min-h-screen bg-yellow-400 flex flex-col items-baseline justify-center text-center p-8">
-        <h1 className="text-4xl font-bold text-black mb-6">Welcome to Efficient Frontier</h1>
-        <div className="space-x-4">
-          <a href="/efficient-frontier" className="bg-white text-black px-4 py-2 rounded shadow">
-            Go to Portfolio
-          </a>
-          <a href="/stock-prices" className="bg-white text-black px-4 py-2 rounded shadow">
-            Go to Stocks
-          </a>
-        </div>
-      </div>
-    </main>
+      <Head>
+        <title>Efficient Frontier</title>
+        <meta name="description" content="Elegant brown theme" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </Head>
+
+      <main className="bg-[#2c1f1a] text-[#ede0d4] min-h-screen px-6 py-8">
+        <h1 className="text-2xl font-bold mb-8">Welcome to Efficient Frontier</h1>
+
+        <nav className="flex flex-col gap-4 max-w-sm">
+          <NavLink href="/efficient-frontier" label="Efficient Frontier" />
+          <NavLink href="/stock-prices" label="Stock Prices Graph" />
+        </nav>
+      </main>
     </>
+  );
+}
+
+function NavLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="block text-[#bfa89e] bg-[#a0522d] hover:bg-[#d2691e] hover:text-white px-4 py-3 rounded-lg shadow text-lg font-semibold transition duration-200"
+    >
+      {label}
+    </Link>
   );
 }
