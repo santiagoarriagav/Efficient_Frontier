@@ -16,9 +16,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from api.views import EfficientFrontierView
+from api.views import EfficientFrontierView, StockPricesView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("api/efficient-frontier/", EfficientFrontierView.as_view())
+    path("api/efficient-frontier/", EfficientFrontierView.as_view()),
+    path("api/stock-price-history/", StockPricesView.as_view())
 ]
