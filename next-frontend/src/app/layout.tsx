@@ -1,4 +1,5 @@
 import "@/styles/globals.css";
+import type { Metadata } from "next";
 import { PropsWithChildren } from "react";
 
 export default function RootLayout({ children }: PropsWithChildren) {
