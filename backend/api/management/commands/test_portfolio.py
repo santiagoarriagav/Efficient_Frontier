@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
-from backend.portfolio_optimizer import Portfolio  # o donde tengas tu clase
+from api.portfolio_optimizer import Portfolio
+
 
 class Command(BaseCommand):
     help = "Test Portfolio logic"

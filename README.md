@@ -1,4 +1,4 @@
 ﻿# Efficient_Frontier
   Faltante:
-    Falta añadir capacidad de ver la gráfica en el frontend.
-    Completar migracion de la funcion de optimización para incluir portafolio optimo.
+    Graficas de precios
+    

@@ -1,10 +1,11 @@
 from django.shortcuts import render
+import sys
 
 # Create your views here.
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from backend.portfolio_optimizer import Portfolio
+from api.portfolio_optimizer import Portfolio
 
 class EfficientFrontierView(APIView):
     def post(self, request):
@@ -17,3 +18,10 @@ class EfficientFrontierView(APIView):
         summaries = portfolio.get_graph_data() 
 
         return Response({"frontier": summaries}, status=status.HTTP_200_OK)
+
+class StockPricesView(APIView):
+    def post(self, request): 
+        ticker = request.data.get("ticker", )
+        
+
+        
