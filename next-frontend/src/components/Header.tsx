@@ -5,7 +5,7 @@ export default function Header() {
     <header className="bg-[#3b2f2a] text-[#ede0d4] border-b border-[#4a3a32] shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
         {/* Logo / App Name */}
-        <h1>Efficient Frontier</h1>
+        <h1>Financial Tools</h1>
 
         <nav className="space-x-6 text-sm font-medium">
           <NavLink href="/" label="Home" />
