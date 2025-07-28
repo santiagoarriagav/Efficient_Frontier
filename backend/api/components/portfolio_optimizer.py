@@ -6,7 +6,7 @@ from django.utils.timezone import now
 from scipy.optimize import minimize
 
 class Portfolio:
-    def __init__(self, assets, period="5y", rang=365, RiskFreeYearly=0.04, return_type="classic"):
+    def __init__(self, assets, period="5y", rang=20, RiskFreeYearly=0.04, return_type="classic_annualized"):
         #definiciones
         self.assets     = assets
         self.period     = period
@@ -14,12 +14,15 @@ class Portfolio:
         self.riskfree   = RiskFreeYearly
 
         self.prices = self.get_prices()
-    
+        print(self.prices)
         match return_type:
             case "classic":
+                self.returns = self.classic_returns()
+            case "classic_annualized":
                 self.returns = self.classic_returns_annualized()
             case "smooth":
                 self.returns = self.smooth_classic_returns()
+        print(self.returns)
         
         #make the data from returns
         self.cov_matrix = self.returns.cov()
@@ -50,6 +53,16 @@ class Portfolio:
         else:
             raise ValueError("Unsupported period format")
         
+    def classic_returns(self):
+        """Take classic returns, and annualized"""
+
+        prices = self.prices
+        forward_prices = prices.shift(-self.rang) 
+        returns = (forward_prices / prices) - 1
+        returns = returns[:-self.rang]
+
+        return returns
+        
     def classic_returns_annualized(self):
         """Take classic returns, and annualized"""
 
@@ -63,7 +76,13 @@ class Portfolio:
         
     def smooth_classic_returns(self):
         
-        return
+        prices = self.prices
+        forward_prices = prices.shift(-self.rang) 
+        returns = np.log(forward_prices / prices)
+        returns = returns[:-self.rang] #remove nans and 0
+        annualized_returns = returns * (252 / self.rang)
+        
+        return annualized_returns
     
     def full_portfolio_performance(self, weights):
         weights = np.matrix(weights)
@@ -114,11 +133,12 @@ class Portfolio:
         
         initial = num_assets * [1. / num_assets]
 
-        target_returns = np.linspace(min(self.mean_returns), 
+        target_returns = np.linspace(0, 
                                      max(self.mean_returns), trials)
         efficient_weights   = []
 
         for target in target_returns:
+            print(f"Optimizing for target return: {target}")
             constraints = (
                     {'type': 'eq', 'fun': lambda w: np.sum(w) - 1},
                     {'type': 'eq', 'fun': lambda w: np.dot(w, mean_returns) - target}
@@ -134,6 +154,7 @@ class Portfolio:
             
             if result.success:
                 efficient_weights.append(np.round(result.x,6))
+                print(f"Optimization successful for target return: {target}, linspace {min(self.mean_returns)} - {max(self.mean_returns)}")
             else:
                 print(f"Optimization failed for target return: {target}")
         

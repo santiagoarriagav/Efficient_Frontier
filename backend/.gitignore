@@ -5,6 +5,7 @@ __pycache__/
 *.log
 *.pot
 *.pyc
+.pyc
 *.pyo
 *.pyd
 *.db
@@ -50,5 +51,3 @@ Thumbs.db
 *.tmp
 .idea/
 *.code-workspace
-backend/backend/__pycache__/settings.cpython-313.pyc
-backend/backend/__pycache__/__init__.cpython-313.pyc
